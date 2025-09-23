@@ -1,0 +1,37 @@
+"""FastAPI application for PDF to DICOM conversion service."""
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from .api import router
+
+app = FastAPI(
+    title="PDF to DICOM Converter",
+    description="Convert PDF files to DICOM Encapsulated PDF Storage objects",
+    version="0.1.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+# Add CORS middleware for development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure appropriately for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include API routes
+app.include_router(router)
+
+
+@app.get("/")
+async def root():
+    """Root endpoint with API information."""
+    return {
+        "message": "PDF to DICOM Converter API",
+        "version": "0.1.0",
+        "docs": "/docs",
+        "health": "/health"
+    }

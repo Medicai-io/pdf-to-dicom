@@ -1,0 +1,1 @@
+This is not a PDF file - just text that should fail validation. This text is longer than 100 bytes to pass the size check but still fail format validation. Here is some more text to make it longer and reach over 100 bytes total length.

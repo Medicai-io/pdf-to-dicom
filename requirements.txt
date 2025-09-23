@@ -1,0 +1,6 @@
+# Production dependencies with pinned versions for deployment
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydicom==3.0.1
+pypdf==3.17.1
+python-multipart==0.0.6
