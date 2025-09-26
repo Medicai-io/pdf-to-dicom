@@ -1,15 +1,16 @@
 """Unit tests for PDF to DICOM converter functionality."""
 
-import pytest
-import pydicom
 from pathlib import Path
 
+import pydicom
+import pytest
+
 from pdf_to_dicom.converter import (
-    convert_pdf_to_dicom,
-    InvalidPDFError,
     DICOMCreationError,
-    _validate_pdf,
+    InvalidPDFError,
     _create_dicom_dataset,
+    _validate_pdf,
+    convert_pdf_to_dicom,
 )
 
 # Test data paths
@@ -72,7 +73,7 @@ class TestDICOMCreation:
             patient_id="12345",
             study_uid="1.2.3.4.5.6.7.8.9",
             series_uid="1.2.3.4.5.6.7.8.10",
-            sop_uid="1.2.3.4.5.6.7.8.11"
+            sop_uid="1.2.3.4.5.6.7.8.11",
         )
 
         # Verify SOP Class
@@ -116,7 +117,7 @@ class TestConvertPDFToDICOM:
             patient_id="12345",
             study_uid="1.2.3.4.5.6.7.8.9",
             series_uid="1.2.3.4.5.6.7.8.10",
-            sop_uid="1.2.3.4.5.6.7.8.11"
+            sop_uid="1.2.3.4.5.6.7.8.11",
         )
 
         # Verify we got bytes back
@@ -125,6 +126,7 @@ class TestConvertPDFToDICOM:
 
         # Verify we can read it as DICOM
         import io
+
         ds = pydicom.dcmread(io.BytesIO(dicom_bytes))
         assert ds.SOPClassUID == "1.2.840.10008.5.1.4.1.1.104.1"
         assert ds.PatientName == "Doe^John"
@@ -136,9 +138,7 @@ class TestConvertPDFToDICOM:
             pdf_bytes = f.read()
 
         dicom_bytes = convert_pdf_to_dicom(
-            pdf_bytes=pdf_bytes,
-            patient_name="Smith^Jane",
-            patient_id="67890"
+            pdf_bytes=pdf_bytes, patient_name="Smith^Jane", patient_id="67890"
         )
 
         # Verify conversion succeeded
@@ -147,6 +147,7 @@ class TestConvertPDFToDICOM:
 
         # Verify DICOM content
         import io
+
         ds = pydicom.dcmread(io.BytesIO(dicom_bytes))
         assert ds.PatientName == "Smith^Jane"
         assert ds.PatientID == "67890"
@@ -163,9 +164,7 @@ class TestConvertPDFToDICOM:
 
         with pytest.raises(InvalidPDFError, match="Patient name and ID are required"):
             convert_pdf_to_dicom(
-                pdf_bytes=pdf_bytes,
-                patient_name="",
-                patient_id="12345"
+                pdf_bytes=pdf_bytes, patient_name="", patient_id="12345"
             )
 
     def test_convert_missing_patient_id(self):
@@ -175,9 +174,7 @@ class TestConvertPDFToDICOM:
 
         with pytest.raises(InvalidPDFError, match="Patient name and ID are required"):
             convert_pdf_to_dicom(
-                pdf_bytes=pdf_bytes,
-                patient_name="Doe^John",
-                patient_id=""
+                pdf_bytes=pdf_bytes, patient_name="Doe^John", patient_id=""
             )
 
     def test_convert_invalid_pdf(self):
@@ -189,7 +186,7 @@ class TestConvertPDFToDICOM:
             convert_pdf_to_dicom(
                 pdf_bytes=pdf_bytes,
                 patient_name="Doe^John",
-                patient_id="12345"
+                patient_id="12345",
             )
 
     def test_convert_oversized_pdf(self):
@@ -201,7 +198,7 @@ class TestConvertPDFToDICOM:
             convert_pdf_to_dicom(
                 pdf_bytes=large_pdf,
                 patient_name="Doe^John",
-                patient_id="12345"
+                patient_id="12345",
             )
 
 
@@ -224,8 +221,13 @@ class TestErrorHandling:
         assert "too small" in str(exc_info.value)
 
         # Test invalid format (larger than 100 bytes)
+        long_text = (
+            b"not a pdf file but long enough text to pass size validation, "
+            b"needs to be over 100 bytes long and here is more text to make it "
+            b"really long enough to trigger the right validation error path"
+        )
         with pytest.raises(InvalidPDFError) as exc_info:
-            _validate_pdf(b"not a pdf file but long enough text to pass size validation, needs to be over 100 bytes long and here is more text to make it really long enough to trigger the right validation error path")
+            _validate_pdf(long_text)
         assert "Not a valid PDF file" in str(exc_info.value)
 
 
@@ -247,13 +249,11 @@ def test_end_to_end_conversion(sample_patient_data):
         pdf_bytes = f.read()
 
     # Convert PDF to DICOM
-    dicom_bytes = convert_pdf_to_dicom(
-        pdf_bytes=pdf_bytes,
-        **sample_patient_data
-    )
+    dicom_bytes = convert_pdf_to_dicom(pdf_bytes=pdf_bytes, **sample_patient_data)
 
     # Verify the DICOM file
     import io
+
     ds = pydicom.dcmread(io.BytesIO(dicom_bytes))
 
     # Verify all metadata is preserved
@@ -265,6 +265,6 @@ def test_end_to_end_conversion(sample_patient_data):
 
     # Verify PDF is embedded correctly
     # DICOM may add padding bytes, so check that the embedded document contains our PDF
-    assert ds.EncapsulatedDocument.startswith(b'%PDF')
+    assert ds.EncapsulatedDocument.startswith(b"%PDF")
     assert pdf_bytes in ds.EncapsulatedDocument
     assert ds.MIMETypeOfEncapsulatedDocument == "application/pdf"
