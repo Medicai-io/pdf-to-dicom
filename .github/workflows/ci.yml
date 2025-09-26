@@ -68,19 +68,19 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build and test Docker image
+    - name: Build Docker image for testing
       uses: docker/build-push-action@v5
       with:
         context: .
-        push: false
+        load: true
         tags: pdf-to-dicom:test
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Test Docker image (amd64 only)
+    - name: Test Docker image
       run: |
-        docker run --rm -d --name pdf-to-dicom-test -p 8001:8000 --platform linux/amd64 pdf-to-dicom:test
+        docker run --rm -d --name pdf-to-dicom-test -p 8001:8000 pdf-to-dicom:test
         sleep 10
         curl -f http://localhost:8001/health || exit 1
         docker stop pdf-to-dicom-test
