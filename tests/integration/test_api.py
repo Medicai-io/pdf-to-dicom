@@ -4,6 +4,7 @@ import io
 import json
 from pathlib import Path
 
+import pytest
 import pydicom
 from fastapi.testclient import TestClient
 
@@ -61,14 +62,14 @@ class TestConvertEndpoint:
             "series_instance_uid": "1.2.3.4.5.6.7.8.10",
             "sop_instance_uid": "1.2.3.4.5.6.7.8.11",
             "study_description": "Test Study",
-            "series_description": "Test Series",
+            "series_description": "Test Series"
         }
 
         with open(SAMPLE_PDF, "rb") as f:
             response = client.post(
                 "/convert",
                 files={"pdf_file": ("test.pdf", f, "application/pdf")},
-                data={"metadata": json.dumps(metadata)},
+                data={"metadata": json.dumps(metadata)}
             )
 
         assert response.status_code == 200
@@ -87,13 +88,16 @@ class TestConvertEndpoint:
 
     def test_successful_conversion_with_minimal_metadata(self):
         """Test successful conversion with only required fields."""
-        metadata = {"patient_name": "Smith^Jane", "patient_id": "67890"}
+        metadata = {
+            "patient_name": "Smith^Jane",
+            "patient_id": "67890"
+        }
 
         with open(SAMPLE_PDF, "rb") as f:
             response = client.post(
                 "/convert",
                 files={"pdf_file": ("test.pdf", f, "application/pdf")},
-                data={"metadata": json.dumps(metadata)},
+                data={"metadata": json.dumps(metadata)}
             )
 
         assert response.status_code == 200
@@ -110,13 +114,16 @@ class TestConvertEndpoint:
 
     def test_invalid_pdf_file(self):
         """Test error handling with invalid PDF file."""
-        metadata = {"patient_name": "Test^Patient", "patient_id": "TEST123"}
+        metadata = {
+            "patient_name": "Test^Patient",
+            "patient_id": "TEST123"
+        }
 
         with open(CORRUPTED_PDF, "rb") as f:
             response = client.post(
                 "/convert",
                 files={"pdf_file": ("corrupted.pdf", f, "application/pdf")},
-                data={"metadata": json.dumps(metadata)},
+                data={"metadata": json.dumps(metadata)}
             )
 
         assert response.status_code == 400
@@ -134,7 +141,7 @@ class TestConvertEndpoint:
             response = client.post(
                 "/convert",
                 files={"pdf_file": ("test.pdf", f, "application/pdf")},
-                data={"metadata": json.dumps(metadata)},
+                data={"metadata": json.dumps(metadata)}
             )
 
         assert response.status_code == 422
@@ -147,7 +154,7 @@ class TestConvertEndpoint:
             response = client.post(
                 "/convert",
                 files={"pdf_file": ("test.pdf", f, "application/pdf")},
-                data={"metadata": "invalid json"},
+                data={"metadata": "invalid json"}
             )
 
         assert response.status_code == 400
@@ -156,13 +163,16 @@ class TestConvertEndpoint:
 
     def test_empty_patient_name(self):
         """Test validation error with empty patient name."""
-        metadata = {"patient_name": "", "patient_id": "12345"}
+        metadata = {
+            "patient_name": "",
+            "patient_id": "12345"
+        }
 
         with open(SAMPLE_PDF, "rb") as f:
             response = client.post(
                 "/convert",
                 files={"pdf_file": ("test.pdf", f, "application/pdf")},
-                data={"metadata": json.dumps(metadata)},
+                data={"metadata": json.dumps(metadata)}
             )
 
         assert response.status_code == 422
@@ -174,14 +184,14 @@ class TestConvertEndpoint:
         metadata = {
             "patient_name": "Test^Patient",
             "patient_id": "12345",
-            "study_instance_uid": "invalid.uid.format.with.letters",
+            "study_instance_uid": "invalid.uid.format.with.letters"
         }
 
         with open(SAMPLE_PDF, "rb") as f:
             response = client.post(
                 "/convert",
                 files={"pdf_file": ("test.pdf", f, "application/pdf")},
-                data={"metadata": json.dumps(metadata)},
+                data={"metadata": json.dumps(metadata)}
             )
 
         assert response.status_code == 422
@@ -190,13 +200,16 @@ class TestConvertEndpoint:
 
     def test_non_pdf_file_extension(self):
         """Test error with non-PDF file extension."""
-        metadata = {"patient_name": "Test^Patient", "patient_id": "12345"}
+        metadata = {
+            "patient_name": "Test^Patient",
+            "patient_id": "12345"
+        }
 
         with open(SAMPLE_PDF, "rb") as f:
             response = client.post(
                 "/convert",
                 files={"pdf_file": ("test.txt", f, "text/plain")},
-                data={"metadata": json.dumps(metadata)},
+                data={"metadata": json.dumps(metadata)}
             )
 
         assert response.status_code == 400
@@ -205,9 +218,15 @@ class TestConvertEndpoint:
 
     def test_missing_pdf_file(self):
         """Test error when PDF file is missing."""
-        metadata = {"patient_name": "Test^Patient", "patient_id": "12345"}
+        metadata = {
+            "patient_name": "Test^Patient",
+            "patient_id": "12345"
+        }
 
-        response = client.post("/convert", data={"metadata": json.dumps(metadata)})
+        response = client.post(
+            "/convert",
+            data={"metadata": json.dumps(metadata)}
+        )
 
         assert response.status_code == 422  # FastAPI validation error
 
@@ -216,7 +235,7 @@ class TestConvertEndpoint:
         with open(SAMPLE_PDF, "rb") as f:
             response = client.post(
                 "/convert",
-                files={"pdf_file": ("test.pdf", f, "application/pdf")},
+                files={"pdf_file": ("test.pdf", f, "application/pdf")}
             )
 
         assert response.status_code == 422  # FastAPI validation error

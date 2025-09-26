@@ -1,23 +1,22 @@
 """Core PDF to DICOM conversion functionality."""
 
-import io
 from datetime import datetime
 from typing import Optional
+import io
 
+import pydicom
 from pydicom.dataset import Dataset, FileMetaDataset
-from pydicom.uid import ExplicitVRLittleEndian, generate_uid
+from pydicom.uid import generate_uid, ExplicitVRLittleEndian
 from pypdf import PdfReader
 
 
 class InvalidPDFError(ValueError):
     """Raised when PDF file is invalid or corrupted."""
-
     pass
 
 
 class DICOMCreationError(RuntimeError):
     """Raised when DICOM file creation fails."""
-
     pass
 
 
@@ -61,7 +60,8 @@ def convert_pdf_to_dicom(
 
         # Create DICOM dataset
         ds = _create_dicom_dataset(
-            pdf_bytes, patient_name, patient_id, study_uid, series_uid, sop_uid
+            pdf_bytes, patient_name, patient_id,
+            study_uid, series_uid, sop_uid
         )
 
         # Convert to bytes
@@ -93,7 +93,7 @@ def _validate_pdf(pdf_bytes: bytes) -> None:
         raise InvalidPDFError("PDF file too small or corrupted")
 
     # Check PDF magic bytes
-    if not pdf_bytes.startswith(b"%PDF"):
+    if not pdf_bytes.startswith(b'%PDF'):
         raise InvalidPDFError("Not a valid PDF file")
 
     # Try to parse PDF with pypdf
@@ -115,7 +115,7 @@ def _create_dicom_dataset(
     patient_id: str,
     study_uid: str,
     series_uid: str,
-    sop_uid: str,
+    sop_uid: str
 ) -> Dataset:
     """Create DICOM Encapsulated PDF Storage dataset.
 
@@ -132,8 +132,8 @@ def _create_dicom_dataset(
     """
     # Create File Meta Information
     file_meta = FileMetaDataset()
-    file_meta.MediaStorageSOPClassUID = "1.2.840.10008.5.1.4.1.1.104.1"  # type: ignore
-    file_meta.MediaStorageSOPInstanceUID = sop_uid  # type: ignore
+    file_meta.MediaStorageSOPClassUID = "1.2.840.10008.5.1.4.1.1.104.1"
+    file_meta.MediaStorageSOPInstanceUID = sop_uid
     file_meta.TransferSyntaxUID = ExplicitVRLittleEndian
     file_meta.ImplementationClassUID = generate_uid()
     file_meta.ImplementationVersionName = "pdf-to-dicom 0.1.0"
