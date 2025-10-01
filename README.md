@@ -2,31 +2,44 @@
 
 [![CI/CD Pipeline](https://github.com/Medicai-io/pdf-to-dicom/actions/workflows/ci.yml/badge.svg)](https://github.com/Medicai-io/pdf-to-dicom/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/Medicai-io/pdf-to-dicom/graph/badge.svg?token=MJUAE9QIUW)](https://codecov.io/gh/Medicai-io/pdf-to-dicom)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](https://hub.docker.com/r/medicai/pdf-to-dicom)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-A production-ready service for converting PDF files to DICOM Encapsulated PDF Storage objects with REST API interface.
+A production-ready service for converting PDF files to DICOM Encapsulated PDF Storage objects with REST API interface. Perfect for integrating PDF documents (reports, consent forms, clinical documents) into PACS and medical imaging workflows.
 
 ## Features
 
-- 📄 Convert PDF files to valid DICOM Encapsulated PDF Storage objects
-- 🚀 FastAPI-based REST API
-- 🔒 Comprehensive validation and error handling
-- 📊 Auto-generated OpenAPI docs at `/docs` and `/redoc`
+- 📄 **DICOM Compliant** - Creates valid Encapsulated PDF Storage objects (SOP Class UID 1.2.840.10008.5.1.4.1.1.104.1)
+- 🚀 **FastAPI REST API** - High-performance async endpoints with automatic validation
+- 🔒 **Comprehensive Validation** - PDF format checks, size limits, and metadata validation
+- 📊 **Auto-generated Docs** - Interactive OpenAPI documentation at `/docs` and `/redoc`
+- 🐳 **Docker Ready** - Multi-stage builds with security best practices
+- ✅ **Production Tested** - 90%+ test coverage with unit and integration tests
 
 ## Quick Start
+
+### Using Docker (Recommended)
+
+```bash
+# Pull and run the latest image
+docker run -p 8000:8000 medicai/pdf-to-dicom:latest
+
+# Or build locally
+docker build -t pdf-to-dicom .
+docker run -p 8000:8000 pdf-to-dicom
+```
+
+### Local Development
 
 ```bash
 # Create virtual environment
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install package in development mode
-pip install -e .
-
-# Install development dependencies
-pip install pytest pytest-cov httpx
+# Install package with dev dependencies
+pip install -e ".[dev]"
 
 # Run the development server
 uvicorn src.pdf_to_dicom.main:app --reload
@@ -34,6 +47,8 @@ uvicorn src.pdf_to_dicom.main:app --reload
 # Run tests
 pytest --cov=src
 ```
+
+The API will be available at `http://localhost:8000` with interactive docs at `http://localhost:8000/docs`.
 
 ## API Usage
 
@@ -63,6 +78,18 @@ curl -X POST "http://localhost:8000/convert" \
   --output converted.dcm
 ```
 
+#### Health Check
+
+```bash
+curl http://localhost:8000/health
+```
+
+#### API Documentation
+- Interactive docs: http://localhost:8000/docs
+- Alternative docs: http://localhost:8000/redoc
+
+
+
 ### Metadata Structure
 
 The `metadata` field must be a JSON string containing patient and study information:
@@ -82,16 +109,6 @@ The `metadata` field must be a JSON string containing patient and study informat
 - **UIDs**: Must contain only digits and dots if provided. Auto-generated UIDs follow standard format
 - **File Limits**: PDF files must be under 100MB
 - **Output**: Returns DICOM file with Content-Type `application/dicom`
-
-### Health Check
-
-```bash
-curl http://localhost:8000/health
-```
-
-### API Documentation
-- Interactive docs: http://localhost:8000/docs
-- Alternative docs: http://localhost:8000/redoc
 
 ### Programmatic Usage
 
@@ -116,13 +133,14 @@ with open('output.dcm', 'wb') as f:
 
 ## Tech Stack
 
-- **Python 3.11+** - Runtime with modern features
-- **FastAPI** - High-performance async web framework
-- **pydicom 3.0.1** - DICOM file creation and manipulation
-- **pypdf 3.17.1** - PDF validation and processing
+- **Python 3.11+** (3.13 recommended) - Modern Python runtime
+- **FastAPI** - High-performance async web framework with automatic OpenAPI docs
+- **pydicom 3.0+** - DICOM file creation and manipulation
+- **pypdf 3.17+** - PDF validation and processing
 - **Pydantic V2** - Data validation and serialization
-- **pytest** - Testing framework with coverage
+- **pytest** - Testing framework with 90%+ coverage requirement
 - **uvicorn** - Lightning-fast ASGI server
+- **Docker** - Multi-stage builds optimized for production
 
 ## Development
 
@@ -140,31 +158,17 @@ pytest tests/integration/test_api.py
 pytest --cov=src --cov-report=html
 ```
 
-### Code Quality
+## Use Cases
 
-```bash
-# Format code
-black .
+- **PACS Integration** - Store PDF reports alongside DICOM images
+- **Clinical Documentation** - Convert consent forms, clinical notes to DICOM format
+- **Telehealth** - Archive telehealth session PDFs in medical imaging systems
+- **Research** - Include protocol documents and study materials in DICOM archives
+- **Compliance** - Maintain PDF documents within regulated DICOM workflows
 
-# Sort imports
-isort .
-
-# Lint code
-flake8
-
-# Type checking
-mypy src
-```
-
+## Roadmap
+Coming soon, let us know your thoughts in the meantime.
 
 ## License
 
 MIT License - see LICENSE file for details.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
