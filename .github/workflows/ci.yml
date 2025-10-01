@@ -111,9 +111,8 @@ jobs:
         images: ${{ secrets.DOCKERHUB_USERNAME }}/pdf-to-dicom
         tags: |
           type=ref,event=branch
-          type=sha,prefix={{branch}}-
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{version}},event=tag
+          type=semver,pattern={{major}}.{{minor}},event=tag
           type=raw,value=latest,enable={{is_default_branch}}
 
     - name: Build and push Docker image
