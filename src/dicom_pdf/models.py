@@ -40,7 +40,8 @@ class ConversionMetadata(BaseModel):
     )
     study_description: Optional[str] = Field(
         None,
-        description="Human-readable description of the study",
+        max_length=64,
+        description="Human-readable description of the study (max 64 characters)",
         examples=[
             "Radiology Report Review",
             "Patient Discharge Summary",
@@ -49,8 +50,41 @@ class ConversionMetadata(BaseModel):
     )
     series_description: Optional[str] = Field(
         None,
-        description="Human-readable description of the series",
+        max_length=64,
+        description="Human-readable description of the series (max 64 characters)",
         examples=["PDF Documents", "Medical Reports", "Clinical Documents"],
+    )
+    series_number: Optional[int] = Field(
+        None,
+        ge=1,
+        le=2147483647,
+        description="Series number controlling ordering in viewers (defaults to 1)",
+        examples=[1, 2, 999],
+    )
+    study_date: Optional[str] = Field(
+        None,
+        description="Study date in YYYYMMDD format (defaults to current date). "
+        "Match the source study for proper study association in PACS viewers.",
+        examples=["20240315"],
+    )
+    study_time: Optional[str] = Field(
+        None,
+        description="Study time in HHMMSS format (defaults to current time)",
+        examples=["143000"],
+    )
+    study_id: Optional[str] = Field(
+        None,
+        max_length=16,
+        pattern=r"^[A-Za-z0-9]+$",
+        description="Study ID, alphanumeric, max 16 characters (defaults to '1')",
+        examples=["STUDY001", "RAD2024003"],
+    )
+    accession_number: Optional[str] = Field(
+        None,
+        max_length=16,
+        pattern=r"^[A-Za-z0-9-]+$",
+        description="Accession number for study grouping, alphanumeric and hyphens, max 16 characters",
+        examples=["ACC-2024-001", "RAD20240315"],
     )
 
     model_config = {
@@ -62,6 +96,7 @@ class ConversionMetadata(BaseModel):
                     "patient_id": "PAT001",
                     "study_description": "Radiology Report Review",
                     "series_description": "PDF Documents",
+                    "series_number": 999,
                 },
                 {
                     "patient_name": "Johnson^Robert^Michael",
@@ -71,6 +106,10 @@ class ConversionMetadata(BaseModel):
                     "sop_instance_uid": "1.2.826.0.1.3680043.8.498.12345678901234567892",
                     "study_description": "Patient Discharge Summary",
                     "series_description": "Clinical Documents",
+                    "study_date": "20240315",
+                    "study_time": "143000",
+                    "study_id": "RAD2024003",
+                    "accession_number": "ACC-2024-001",
                 },
             ]
         }
@@ -99,6 +138,30 @@ class ConversionMetadata(BaseModel):
                 raise ValueError("UID must contain only digits and dots")
             if v.startswith(".") or v.endswith(".") or ".." in v:
                 raise ValueError("UID format is invalid")
+        return v
+
+    @field_validator("study_date")
+    @classmethod
+    def validate_study_date(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            if len(v) != 8:
+                raise ValueError("Study date must be in YYYYMMDD format")
+            try:
+                datetime.strptime(v, "%Y%m%d")
+            except ValueError:
+                raise ValueError("Study date must be a valid date in YYYYMMDD format")
+        return v
+
+    @field_validator("study_time")
+    @classmethod
+    def validate_study_time(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            if len(v) != 6:
+                raise ValueError("Study time must be in HHMMSS format")
+            try:
+                datetime.strptime(v, "%H%M%S")
+            except ValueError:
+                raise ValueError("Study time must be a valid time in HHMMSS format")
         return v
 
 

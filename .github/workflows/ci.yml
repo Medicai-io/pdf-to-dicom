@@ -74,17 +74,17 @@ jobs:
       with:
         context: .
         load: true
-        tags: pdf-to-dicom:test
+        tags: dicom-pdf:test
         platforms: linux/amd64
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
     - name: Test Docker image
       run: |
-        docker run --rm -d --name pdf-to-dicom-test -p 8001:8000 pdf-to-dicom:test
+        docker run --rm -d --name dicom-pdf-test -p 8001:8000 dicom-pdf:test
         sleep 10
         curl -f http://localhost:8001/health || exit 1
-        docker stop pdf-to-dicom-test
+        docker stop dicom-pdf-test
 
   publish:
     needs: [test, build]
@@ -108,7 +108,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ secrets.DOCKERHUB_USERNAME }}/pdf-to-dicom
+        images: ${{ secrets.DOCKERHUB_USERNAME }}/dicom-pdf
         tags: |
           type=ref,event=branch
           type=semver,pattern={{version}},event=tag
@@ -129,7 +129,7 @@ jobs:
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@v0.36.0
       with:
-        image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/pdf-to-dicom:latest
+        image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/dicom-pdf:latest
         format: 'sarif'
         output: 'trivy-results.sarif'
 

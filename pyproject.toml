@@ -3,9 +3,9 @@ requires = ["setuptools>=80.9.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pdf-to-dicom"
-version = "0.1.0"
-description = "Convert PDF files to DICOM Encapsulated PDF Storage objects"
+name = "dicom-pdf"
+version = "0.2.0"
+description = "Convert PDF files to DICOM Encapsulated PDF Storage objects and extract them back"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [
@@ -42,9 +42,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/medicai-io/pdf-to-dicom"
-Repository = "https://github.com/medicai-io/pdf-to-dicom"
-Issues = "https://github.com/medicai-io/pdf-to-dicom/issues"
+Homepage = "https://github.com/medicai-io/dicom-pdf"
+Repository = "https://github.com/medicai-io/dicom-pdf"
+Issues = "https://github.com/medicai-io/dicom-pdf/issues"
 
 
 [tool.setuptools.packages.find]

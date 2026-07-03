@@ -1,12 +1,12 @@
-# Local run for pdf-to-dicom. One service; build + port + a working healthcheck.
+# Local run for dicom-pdf. One service; build + port + a working healthcheck.
 # Usage:  docker compose up -d --wait   (or PORT=8010 docker compose up -d --wait)
 #         docker compose logs -f
 #         docker compose down
 # The run-tests.sh helper wraps this and adds a smoke test + the lint/test suite.
 services:
-  pdf-to-dicom:
+  dicom-pdf:
     build: .
-    image: pdf-to-dicom:local
+    image: dicom-pdf:local
     ports:
       - "${PORT:-8000}:8000"
     # Healthcheck comes from the image (Dockerfile HEALTHCHECK); `--wait` honors it.

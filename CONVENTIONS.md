@@ -1,4 +1,4 @@
-# pdf-to-dicom — Code Conventions
+# dicom-pdf — Code Conventions
 
 Conventions for writing Python in this repo. They describe the patterns already in
 the code — where the code is inconsistent, follow what's documented here and align
@@ -9,8 +9,8 @@ write code.
 
 ## 1. Guiding principles
 
-This is a small, single-purpose service: PDF in, Encapsulated-PDF DICOM out. Keep it
-that way.
+This is a small, single-purpose service: PDF in, Encapsulated-PDF DICOM out — and the
+reverse, DICOM in, embedded PDF out. Keep it that way.
 
 - Solve what's asked, nothing more. Inline over abstract until there's real
   duplication (3+ call sites) or real complexity worth naming. More code is more bugs.
@@ -22,18 +22,20 @@ that way.
 ## 2. Module structure
 
 ```
-src/pdf_to_dicom/
+src/dicom_pdf/
   main.py        # FastAPI app, CORS, GET / — wiring only
   api.py         # APIRouter: request shaping, HTTP status mapping, no business logic
-  converter.py   # pure logic: convert_pdf_to_dicom + _validate_pdf + _create_dicom_dataset
+  converter.py   # pure logic: convert_pdf_to_dicom + extract_pdf_from_dicom
+                 # + _validate_pdf + _validate_dicom + _create_dicom_dataset
   models.py      # Pydantic request/response models + field validators
 ```
 
 - `converter.py` stays framework-free (no FastAPI imports) so it's usable as a
-  library (`from pdf_to_dicom import convert_pdf_to_dicom`). Keep it that way.
+  library (`from dicom_pdf import convert_pdf_to_dicom, extract_pdf_from_dicom`).
+  Keep it that way.
 - `api.py` is HTTP-only: validate the upload, call the converter, map exceptions to
   status codes, return the response. No DICOM/PDF logic there.
-- Private module-level helpers are prefixed `_` (`_validate_pdf`,
+- Private module-level helpers are prefixed `_` (`_validate_pdf`, `_validate_dicom`,
   `_create_dicom_dataset`).
 
 ## 3. Naming & style
@@ -51,21 +53,27 @@ src/pdf_to_dicom/
 - Request/response shapes are Pydantic v2 models in `models.py`. Add new input
   fields there with a `Field(..., description=..., examples=[...])` — the description
   feeds the OpenAPI docs.
-- Cheap, structural validation (non-empty, UID format) goes in a `@field_validator`
-  on the model. Semantic validation that needs the file bytes (magic bytes, page
-  count, size) goes in `converter._validate_pdf`.
+- Cheap, structural validation (non-empty, UID format, date/time formats) goes in a
+  `@field_validator` on the model. Semantic validation that needs the file bytes
+  (magic bytes, page count, SOP class, size) goes in `converter._validate_pdf` /
+  `converter._validate_dicom`.
 - If you add a metadata field that maps to a DICOM tag, wire it through both
   `ConversionMetadata` **and** `_create_dicom_dataset`, and update the README table.
 
 ## 5. Error handling & HTTP mapping
 
-- The converter raises domain exceptions only: `InvalidPDFError` (bad input) and
-  `DICOMCreationError` (serialization failure). It never raises `HTTPException`.
-- `api.py` owns the HTTP mapping: `400` bad file/PDF/JSON · `413` too large · `422`
-  metadata validation · `500` creation/unexpected. Keep that mapping in one place.
-- Small, specific exception classes per concern; catch them explicitly. `InvalidPDFError`
-  is re-raised as-is inside the converter — don't let it get wrapped into
-  `DICOMCreationError`.
+- The converter raises domain exceptions only: `InvalidPDFError` / `InvalidDICOMError`
+  (bad input) and `DICOMCreationError` / `PDFExtractionError` (unexpected failure).
+  It never raises `HTTPException`.
+- `api.py` owns the HTTP mapping: `400` bad file/PDF/DICOM/JSON · `413` too large
+  (100MB PDF, 101MB DICOM) · `422` metadata validation · `500` creation/extraction/
+  unexpected. Keep that mapping in one place.
+- Small, specific exception classes per concern; catch them explicitly. The bad-input
+  exceptions (`InvalidPDFError`, `InvalidDICOMError`) are re-raised as-is inside the
+  converter — don't let them get wrapped into the 500-class exceptions.
+- The `/dicom-to-pdf` route deliberately has **no file-extension check** — DICOM files
+  legitimately ship without extensions and the content check (`dcmread`) is stronger.
+  Don't "align" it with the `.pdf` check on the encode route.
 
 ## 6. DICOM conventions
 
@@ -76,14 +84,22 @@ src/pdf_to_dicom/
 - Set tags by DICOM module (Patient / Study / Series / Equipment / Encapsulated Doc),
   mirroring the grouping already in `_create_dicom_dataset`. The full tag table lives
   in `CLAUDE.md`.
-- No PHI in logs or error messages — reference `patient_id`, not `patient_name`.
+- No PHI in logs or error messages — reference `patient_id`, not `patient_name`. The
+  same applies to response headers: `X-Patient-ID` is fine (same exposure as the
+  `Content-Disposition` filename), `PatientName` never is. Intermediaries/access logs
+  must not log `X-Patient-ID`.
+- On extraction, recover the exact payload: honor `EncapsulatedDocumentLength` when a
+  writer set it, otherwise strip exactly **one** trailing null (the OB even-length
+  pad) — never `rstrip`, which could eat payload bytes.
 
 ## 7. Testing
 
 - `pytest`, split into `tests/unit/` (converter internals) and `tests/integration/`
   (endpoints via FastAPI `TestClient`). Group related cases in a `Test*` class.
-- Reuse the real fixtures in `fixtures/` (`radiology_report.pdf`, `corrupted.pdf`);
-  only synthesize bytes inline when testing malformed input.
+- Reuse the real fixtures in `fixtures/` (`radiology_report.pdf`, `corrupted.pdf`,
+  `encapsulated_report.dcm`); only synthesize bytes inline when testing malformed
+  input. The `.dcm` fixture keeps decoder tests independent of encoder bugs; the
+  regeneration command is in `fixtures/README.md`.
 - Coverage gate is **90%**, set once in `pyproject.toml` (`[tool.coverage.report]
   fail_under`), so local `pytest` and CI enforce the same threshold. A change that
   drops below it fails. Add tests with the change, not after.
