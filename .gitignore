@@ -154,3 +154,7 @@ test_dicoms/
 
 #Bruno
 .bruno/
+
+# Claude Code (local scaffolding)
+CLAUDE.md
+.claude/

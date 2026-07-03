@@ -26,7 +26,11 @@ A production-ready service for converting PDF files to DICOM Encapsulated PDF St
 # Pull and run the latest image
 docker run -p 8000:8000 medicai/pdf-to-dicom:latest
 
-# Or build locally
+# Or build and run locally with Docker Compose
+docker compose up -d --wait      # http://localhost:8000/docs
+docker compose down
+
+# Or plain Docker
 docker build -t pdf-to-dicom .
 docker run -p 8000:8000 pdf-to-dicom
 ```
@@ -143,6 +147,20 @@ with open('output.dcm', 'wb') as f:
 - **Docker** - Multi-stage builds optimized for production
 
 ## Development
+
+### Local helper
+
+`run-tests.sh` wraps the common loop (build, run, smoke-test, lint) so you don't have to remember the individual commands:
+
+```bash
+./run-tests.sh up        # build + run the container, wait for /health
+./run-tests.sh smoke     # health check + a real /convert + DICOM verify
+./run-tests.sh all       # up -> smoke -> down
+./run-tests.sh suite     # pytest + black/isort/flake8/mypy/bandit
+./run-tests.sh dev       # local uvicorn --reload, no Docker
+```
+
+Override the port with `PORT=8010 ./run-tests.sh up`. It's just a convenience over `docker compose` and the tools below — CI doesn't depend on it.
 
 ### Running Tests
 
